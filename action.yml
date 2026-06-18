@@ -1,0 +1,44 @@
+name: 'Setup MacRunner Network'
+description: 'Switch your macOS builds to the distributed MacRunner network for 5x faster builds'
+author: 'MacRunner Team'
+branding:
+  icon: 'cpu'           # 在Marketplace上显示的图标
+  color: 'purple'       # 图标背景色
+
+inputs:
+  api-key:
+    description: 'Your MacRunner API key'
+    required: true
+  runner-labels:
+    description: 'Additional labels to assign to the provisioned runner'
+    required: false
+    default: 'macos-latest'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Validate API key
+      run: |
+        if [ -z "${{ inputs.api-key }}" ]; then
+          echo "Error: api-key is required"
+          exit 1
+        fi
+      shell: bash
+
+    - name: Register MacRunner node
+      run: |
+        echo "::add-mask::${{ inputs.api-key }}"
+        
+        # 向MacRunner API申请一台机器并获取注册token
+        RESPONSE=$(curl -s -X POST \
+          -H "Authorization: Bearer ${{ inputs.api-key }}" \
+          -H "Content-Type: application/json" \
+          -d "{\"repo\":\"${{ github.repository }}\",\"labels\":[\"${{ inputs.runner-labels }}\"]}" \
+          https://api.macrunner.dev/v1/runner-provision)
+        
+        REG_TOKEN=$(echo "$RESPONSE" | jq -r '.registration_token')
+        RUNNER_NAME=$(echo "$RESPONSE" | jq -r '.runner_name')
+        
+        echo "Registered runner: $RUNNER_NAME"
+        echo "runner_name=$RUNNER_NAME" >> $GITHUB_OUTPUT
+      shell: bash
