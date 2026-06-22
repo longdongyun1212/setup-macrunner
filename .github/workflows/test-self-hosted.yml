@@ -1,0 +1,12 @@
+name: Test Self-hosted Runner
+on: [workflow_dispatch]
+jobs:
+  test:
+    runs-on: [self-hosted, m4-pro, macrunner]
+    steps:
+      - name: Say hello from the runner
+        run: |
+          echo "Hello from $(hostname)"
+          echo "Running on $(uname -m) architecture"
+          echo "macOS version: $(sw_vers -productVersion)"
+          echo "CPU: $(sysctl -n machdep.cpu.brand_string 2>/dev/null || echo 'Apple Silicon')"
